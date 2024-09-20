@@ -1,0 +1,780 @@
+<html><head><base href="https://websim.creation.engine/fifa-predict-pro/">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>FIFA PREDICT PRO - Prédictions de Match Améliorées</title>
+<script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://unpkg.com/framer-motion@4.1.17/dist/framer-motion.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<style>
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+  .pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  .score-list {
+    background-color: #f3f4f6;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  
+  .score-item {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .score-item:last-child {
+    border-bottom: none;
+  }
+  
+  .score-label {
+    flex: 0 0 auto;
+    width: 4rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #4b5563;
+  }
+  
+  .score-inputs {
+    display: flex;
+    flex: 1;
+    gap: 0.5rem;
+  }
+  
+  .score-input {
+    flex: 1;
+    max-width: 3rem;
+    font-size: 0.875rem;
+  }
+
+  @media (max-width: 640px) {
+    .sm\:max-w-xl {
+      max-width: 100%;
+      width: 100%;
+    }
+    .sm\:p-12 {
+      padding: 1rem;
+    }
+    .relative.py-3 {
+      padding: 0;
+    }
+    .relative.px-4.py-6 {
+      padding: 1rem;
+    }
+    .probability-container {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  html, body, #root {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    background-image: url('https://websim.creation.engine/fifa-predict-pro/soccer-field-bg.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    transition: background-color 0.3s ease;
+  }
+
+  .content-wrapper {
+    flex: 1;
+    overflow-y: auto;
+    background-color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border-radius: 1rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 800px;
+    margin: 2rem auto;
+    transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  @media (min-width: 640px) {
+    .content-wrapper {
+      max-width: 600px;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .content-wrapper {
+      max-width: 720px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .content-wrapper {
+      max-width: 800px;
+    }
+  }
+
+  .prediction-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+  }
+
+  .prediction-item {
+    background-color: rgba(31, 41, 55, 0.9);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .prediction-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .prediction-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #f3f4f6;
+    margin-bottom: 0.5rem;
+  }
+
+  .prediction-score {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .welcome-message {
+    background-color: rgba(79, 70, 229, 0.1);
+    border-left: 4px solid #4f46e5;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .welcome-message p {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #4b5563;
+  }
+
+  .probability-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    background-color: rgba(45, 55, 72, 0.9);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  @media (max-width: 640px) {
+    .probability-container {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .probability-item {
+    background-color: rgba(74, 85, 104, 0.9);
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    text-align: center;
+    transition: transform 0.3s ease;
+  }
+
+  @media (max-width: 640px) {
+    .probability-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+  }
+
+  .probability-item h3 {
+    color: #e2e8f0;
+  }
+
+  .probability-item p {
+    color: #fff;
+  }
+
+  footer {
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 0.5rem;
+    text-align: center;
+    font-size: 0.75rem;
+    color: #4b5563;
+    box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .custom-input {
+    background-color: rgba(255, 255, 255, 0.9);
+    border: 1px solid #d1d5db;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .custom-input:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+  }
+
+  .custom-button {
+    transition: background-color 0.3s ease, transform 0.3s ease;
+  }
+
+  .custom-button:hover {
+    transform: translateY(-2px);
+  }
+
+  .loading-overlay {
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+  }
+
+  .loading-spinner {
+    border-top-color: #4f46e5;
+  }
+
+  .bg-gray-800 {
+    background-color: rgba(31, 41, 55, 0.9);
+  }
+
+  .text-white {
+    color: #ffffff;
+  }
+
+  .dark {
+    background-color: #121212;
+    color: #e2e8f0;
+  }
+
+  .hot {
+    background-image: url('https://websim.creation.engine/fifa-predict-pro/hot-soccer-field-bg.jpg');
+  }
+
+  .content-wrapper.hot {
+    background-color: rgba(254, 226, 226, 0.9);
+  }
+
+  .prediction-item.hot {
+    background-color: rgba(220, 38, 38, 0.9);
+  }
+
+  .animate-spin {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .menu-button {
+    background-color: #4f46e5;
+    color: white;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    margin: 0.5rem;
+  }
+
+  .menu-button:hover {
+    background-color: #4338ca;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .menu-button.hot {
+    background-color: #ef4444;
+  }
+
+  .menu-button.hot:hover {
+    background-color: #dc2626;
+  }
+
+  @media (max-width: 640px) {
+    .welcome-message {
+      padding: 1rem;
+    }
+    
+    .welcome-message p {
+      font-size: 0.875rem;
+    }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect } = React;
+const { motion } = window.Motion;
+
+const FifaPredictPro = () => {
+  const [currentMode, setCurrentMode] = useState('home');
+  const [odds, setOdds] = useState({ home: '', draw: '', away: '' });
+  const [exactScores, setExactScores] = useState([
+    { score: '', odds: '' },
+    { score: '', odds: '' },
+    { score: '', odds: '' },
+    { score: '', odds: '' },
+    { score: '', odds: '' },
+  ]);
+  const [predictions, setPredictions] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState('odds');
+  const [showAnimation, setShowAnimation] = useState(false);
+
+  const handleOddsChange = (e) => {
+    setOdds({ ...odds, [e.target.name]: e.target.value });
+  };
+
+  const handleExactScoreChange = (index, field, value) => {
+    const newExactScores = [...exactScores];
+    newExactScores[index] = { ...newExactScores[index], [field]: value };
+    setExactScores(newExactScores);
+  };
+
+  const calculatePredictions = (isHot = false) => {
+    setError('');
+    setLoading(true);
+
+    if (!odds.home || !odds.draw || !odds.away) {
+      setError('Veuillez entrer toutes les cotes.');
+      setLoading(false);
+      return;
+    }
+
+    const validExactScores = exactScores.filter(score => score.score !== '' && score.odds !== '');
+    if (validExactScores.length === 0) {
+      setError('Veuillez entrer au moins un score exact avec sa cote.');
+      setLoading(false);
+      return;
+    }
+
+    setTimeout(() => {
+      const totalProb = (1 / parseFloat(odds.home)) + (1 / parseFloat(odds.draw)) + (1 / parseFloat(odds.away));
+      const homeProb = (1 / parseFloat(odds.home)) / totalProb * 100;
+      const drawProb = (1 / parseFloat(odds.draw)) / totalProb * 100;
+      const awayProb = (1 / parseFloat(odds.away)) / totalProb * 100;
+
+      const sortedExactScores = validExactScores.sort((a, b) => parseFloat(a.odds) - parseFloat(b.odds));
+
+      const topScore1 = sortedExactScores[0].score.split('-').map(Number);
+      const topScore2 = sortedExactScores[1] ? sortedExactScores[1].score.split('-').map(Number) : topScore1;
+
+      const adjustScore = (score, prob) => {
+        return Math.round(score * (prob / (isHot ? 40 : 50)));
+      };
+
+      const homeScore1 = adjustScore(topScore1[0], homeProb);
+      const awayScore1 = adjustScore(topScore1[1], awayProb);
+      const homeScore2 = adjustScore(topScore2[0], homeProb);
+      const awayScore2 = adjustScore(topScore2[1], awayProb);
+
+      const homeScoreHT1 = Math.max(0, Math.floor(homeScore1 / 2));
+      const awayScoreHT1 = Math.max(0, Math.floor(awayScore1 / 2));
+      const homeScoreHT2 = Math.max(0, Math.floor(homeScore2 / 2));
+      const awayScoreHT2 = Math.max(0, Math.floor(awayScore2 / 2));
+
+      const ensureDifferentScores = (score1, score2) => {
+        if (score1 === score2) {
+          return `${score1[0]} - ${Math.max(0, score1[1] - 1)}`;
+        }
+        return score1;
+      };
+
+      const halfTimeScore1 = `${homeScoreHT1} - ${awayScoreHT1}`;
+      const halfTimeScore2 = ensureDifferentScores(`${homeScoreHT2} - ${awayScoreHT2}`, halfTimeScore1);
+      const fullTimeScore1 = `${homeScore1} - ${awayScore1}`;
+      const fullTimeScore2 = ensureDifferentScores(`${homeScore2} - ${awayScore2}`, fullTimeScore1);
+
+      const doubleChance = {
+        homeOrDraw: (homeProb + drawProb).toFixed(2),
+        homeOrAway: (homeProb + awayProb).toFixed(2),
+        drawOrAway: (drawProb + awayProb).toFixed(2)
+      };
+
+      const bothTeamsToScore = (homeProb * awayProb * 100).toFixed(2);
+
+      if (isHot) {
+        const totalGoals = homeScore1 + awayScore1 + homeScore2 + awayScore2;
+        const averageGoals = totalGoals / 2;
+
+        const overUnder = {
+          over25: Math.min(95, ((averageGoals / 2.5) * 100).toFixed(2)),
+          over35: Math.min(90, ((averageGoals / 3.5) * 100).toFixed(2)),
+          over45: Math.min(85, ((averageGoals / 4.5) * 100).toFixed(2)),
+        };
+
+        const mostConfidentPrediction = determineConfidentPrediction({
+          overUnder,
+          homeScore1,
+          awayScore1,
+          homeScore2,
+          awayScore2
+        }, isHot);
+
+        setPredictions({
+          scores: {
+            fullTime: [fullTimeScore1, fullTimeScore2],
+            halfTime: [halfTimeScore1, halfTimeScore2]
+          },
+          overUnder,
+          mostConfidentPrediction
+        });
+      } else {
+        const overUnder = isHot ? {
+          over25: ((homeProb + awayProb) / 2 * 100).toFixed(2),
+          over35: ((homeProb + awayProb) / 2.5 * 100).toFixed(2),
+          over45: ((homeProb + awayProb) / 3 * 100).toFixed(2),
+        } : {
+          over15: ((homeProb + awayProb) / 2 * 100).toFixed(2),
+          over25: ((homeProb + awayProb) / 3 * 100).toFixed(2),
+          over35: ((homeProb + awayProb) / 4 * 100).toFixed(2),
+          under35: (100 - ((homeProb + awayProb) / 4 * 100)).toFixed(2)
+        };
+
+        const mostConfidentPrediction = determineConfidentPrediction({
+          doubleChance,
+          bothTeamsToScore,
+          overUnder,
+          homeScore1,
+          awayScore1,
+          homeScore2,
+          awayScore2
+        }, isHot);
+
+        setPredictions({
+          probabilities: {
+            home: homeProb.toFixed(2),
+            draw: drawProb.toFixed(2),
+            away: awayProb.toFixed(2)
+          },
+          scores: {
+            fullTime: [fullTimeScore1, fullTimeScore2],
+            halfTime: [halfTimeScore1, halfTimeScore2]
+          },
+          doubleChance,
+          bothTeamsToScore,
+          overUnder,
+          mostConfidentPrediction
+        });
+      }
+
+      setLoading(false);
+      setStep('predictions');
+      setCurrentMode(isHot ? 'hot' : 'classiques');
+    }, 2000);
+  };
+
+  const determineConfidentPrediction = (predictions, isHot) => {
+    const { homeScore1, awayScore1, homeScore2, awayScore2 } = predictions;
+    const totalGoals = homeScore1 + awayScore1 + homeScore2 + awayScore2;
+
+    if (isHot) {
+      const options = [
+        { type: 'Plus de 2.5 buts', value: totalGoals > 2.5 ? 75 : 25, prediction: totalGoals > 2.5 ? 'OUI' : 'NON' },
+        { type: 'Plus de 3.5 buts', value: totalGoals > 3.5 ? 65 : 35, prediction: totalGoals > 3.5 ? 'OUI' : 'NON' },
+        { type: 'Plus de 4.5 buts', value: totalGoals > 4.5 ? 55 : 45, prediction: totalGoals > 4.5 ? 'OUI' : 'NON' }
+      ];
+
+      const mostConfident = options.reduce((max, option) => option.value > max.value ? option : max);
+      const reliability = Math.min(99, Math.round(mostConfident.value));
+
+      return { ...mostConfident, reliability };
+    } else {
+      const options = [
+        { type: 'Les deux équipes vont marquer', value: (homeScore1 > 0 && awayScore1 > 0) || (homeScore2 > 0 && awayScore2 > 0) ? 75 : 25, prediction: (homeScore1 > 0 && awayScore1 > 0) || (homeScore2 > 0 && awayScore2 > 0) ? 'OUI' : 'NON' },
+        { type: 'Double Chance', value: Math.max(...Object.values(predictions.doubleChance)), prediction: Object.entries(predictions.doubleChance).reduce((a, b) => a[1] > b[1] ? a : b)[0] === 'homeOrDraw' ? '1X' : Object.entries(predictions.doubleChance).reduce((a, b) => a[1] > b[1] ? a : b)[0] === 'drawOrAway' ? 'X2' : '12' },
+        { type: 'Plus de 1.5 buts', value: totalGoals > 1.5 ? 80 : 20, prediction: totalGoals > 1.5 ? 'OUI' : 'NON' },
+        { type: 'Plus de 2.5 buts', value: totalGoals > 2.5 ? 70 : 30, prediction: totalGoals > 2.5 ? 'OUI' : 'NON' },
+        { type: 'Plus de 3.5 buts', value: totalGoals > 3.5 ? 60 : 40, prediction: totalGoals > 3.5 ? 'OUI' : 'NON' },
+        { type: 'Moins de 3.5 buts', value: totalGoals < 3.5 ? 65 : 35, prediction: totalGoals < 3.5 ? 'OUI' : 'NON' }
+      ];
+
+      const mostConfident = options.reduce((max, option) => option.value > max.value ? option : max);
+      const reliability = Math.min(99, Math.round(mostConfident.value));
+
+      return { ...mostConfident, reliability };
+    }
+  };
+
+  const resetPrediction = () => {
+    setCurrentMode('home');
+    setOdds({ home: '', draw: '', away: '' });
+    setExactScores([
+      { score: '', odds: '' },
+      { score: '', odds: '' },
+      { score: '', odds: '' },
+      { score: '', odds: '' },
+      { score: '', odds: '' },
+    ]);
+    setPredictions(null);
+    setError('');
+    setStep('odds');
+  };
+
+  const renderWelcomePage = () => {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-center p-8">
+        <h1 className="text-4xl font-bold text-indigo-600 mb-6">FIFA PREDICT PRO</h1>
+        <div className="welcome-message">
+          <p>
+            FIFA Predict Pro est un outil de pointe qui vous offre des prédictions précises et fiables pour tous les matchs FIFA. Grâce à des techniques avancées de calcul et à des modèles sophistiqués, FIFA Predict Pro vous garantit les prévisions les plus sûres pour chaque rencontre, en vous fournissant des résultats de haute qualité.
+          </p>
+        </div>
+        <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 mb-8">
+          <button
+            onClick={() => setCurrentMode('classiques')}
+            className="menu-button"
+          >
+            FIFA CLASSIQUES
+          </button>
+          <button
+            onClick={() => setCurrentMode('hot')}
+            className="menu-button hot"
+          >
+            FIFA HOT
+          </button>
+        </div>
+        <div className="flex space-x-4">
+          <a href="https://youtube.com/@alvecapital?si=4Z6KpE28K1PUycqK" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-800">
+            YouTube
+          </a>
+          <a href="https://t.me/alvecapital1" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-800">
+            Telegram
+          </a>
+        </div>
+      </div>
+    );
+  };
+
+  const renderOddsInput = () => (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5 }}
+      className="max-w-md mx-auto p-4"
+    >
+      <h2 className="text-xl font-bold text-gray-800 mb-4">Étape 1: Cotes du Match</h2>
+      <p className="mb-4">Veuillez saisir les cotes du bookmaker avec précaution.</p>
+      {['home', 'draw', 'away'].map((type) => (
+        <div key={type}>
+          <label htmlFor={type} className="block text-sm font-medium text-gray-700">
+            Cote {type === 'home' ? 'Domicile' : type === 'draw' ? 'Match nul' : 'Extérieur'}
+          </label>
+          <input
+            type="number"
+            id={type}
+            name={type}
+            value={odds[type]}
+            onChange={handleOddsChange}
+            className="custom-input mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500"
+            placeholder="Entrez la cote"
+            step="0.01"
+            min="1.01"
+          />
+        </div>
+      ))}
+      <button
+        onClick={() => setStep('exactScores')}
+        className="custom-button w-full mt-4 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+      >
+        Suivant
+      </button>
+    </motion.div>
+  );
+
+  const renderExactScoresInput = () => (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5 }}
+      className="max-w-md mx-auto p-4"
+    >
+      <h2 className="text-xl font-bold text-gray-800 mb-4">Étape 2: Scores Exacts</h2>
+      {exactScores.map((score, index) => (
+        <div key={index} className="flex space-x-2">
+          <input
+            type="text"
+            value={score.score}
+            onChange={(e) => handleExactScoreChange(index, 'score', e.target.value)}
+            placeholder="Score (ex: 1-0)"
+            className="custom-input flex-1 border border-gray-300 rounded-md shadow-sm p-2"
+          />
+          <input
+            type="number"
+            value={score.odds}
+            onChange={(e) => handleExactScoreChange(index, 'odds', e.target.value)}
+            placeholder="Cote"
+            className="custom-input flex-1 border border-gray-300 rounded-md shadow-sm p-2"
+            step="0.01"
+            min="1.01"
+          />
+        </div>
+      ))}
+      <button
+        onClick={() => {
+          setShowAnimation(true);
+          calculatePredictions(currentMode === 'hot');
+          setTimeout(() => {
+            setShowAnimation(false);
+            setStep('predictions');
+          }, 3000);
+        }}
+        className="custom-button w-full mt-4 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+      >
+        Générer la Prédiction
+      </button>
+    </motion.div>
+  );
+
+  const renderLoadingAnimation = () => (
+    <div className="flex justify-center items-center h-64">
+      <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-indigo-500"></div>
+    </div>
+  );
+
+  const renderPredictions = () => (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5 }}
+      className="max-w-md mx-auto p-4"
+    >
+      <h2 className="text-2xl font-bold mb-4">Prédictions</h2>
+      
+      {currentMode === 'hot' ? (
+        <div>
+          <div className="mb-4">
+            <h3 className="text-xl font-semibold mb-2">Scores prédits</h3>
+            <p>Mi-temps: {predictions.scores.halfTime[0]} ou {predictions.scores.halfTime[1]}</p>
+            <p>Temps complet: {predictions.scores.fullTime[0]} ou {predictions.scores.fullTime[1]}</p>
+          </div>
+          
+          <div className="mb-4">
+            <h3 className="text-xl font-semibold mb-2">Over/Under</h3>
+            {Object.entries(predictions.overUnder).map(([key, value]) => (
+              <p key={key}>{key.replace(/([A-Z])/g, ' $1').trim()}: {value}%</p>
+            ))}
+          </div>
+          
+          <div className="mb-6 p-4 bg-green-100 rounded-lg">
+            <h3 className="text-xl font-semibold mb-2">Prédiction la plus fiable</h3>
+            <p>{predictions.mostConfidentPrediction.type}: {predictions.mostConfidentPrediction.prediction}</p>
+            <p>Fiabilité: {predictions.mostConfidentPrediction.reliability}%</p>
+          </div>
+        </div>
+      ) : (
+        <div>
+          <div className="mb-4">
+            <h3 className="text-xl font-semibold mb-2">Probabilités</h3>
+            <p>Domicile: {predictions.probabilities.home}%</p>
+            <p>Match nul: {predictions.probabilities.draw}%</p>
+            <p>Extérieur: {predictions.probabilities.away}%</p>
+          </div>
+
+          <div className="mb-4">
+            <h3 className="text-xl font-semibold mb-2">Scores prédits</h3>
+            <p>Mi-temps: {predictions.scores.halfTime[0]} ou {predictions.scores.halfTime[1]}</p>
+            <p>Temps complet: {predictions.scores.fullTime[0]} ou {predictions.scores.fullTime[1]}</p>
+          </div>
+          
+          <div className="mb-4">
+            <h3 className="text-xl font-semibold mb-2">Double chance</h3>
+            <p>1X: {predictions.doubleChance.homeOrDraw}%</p>
+            <p>12: {predictions.doubleChance.homeOrAway}%</p>
+            <p>X2: {predictions.doubleChance.drawOrAway}%</p>
+          </div>
+          
+          <div className="mb-4">
+            <h3 className="text-xl font-semibold mb-2">Les deux équipes marquent</h3>
+            <p>{predictions.bothTeamsToScore}%</p>
+          </div>
+          
+          <div className="mb-4">
+            <h3 className="text-xl font-semibold mb-2">Over/Under</h3>
+            {Object.entries(predictions.overUnder).map(([key, value]) => (
+              <p key={key}>{key.replace(/([A-Z])/g, ' $1').trim()}: {value}%</p>
+            ))}
+          </div>
+          
+          <div className="mb-6 p-4 bg-green-100 rounded-lg">
+            <h3 className="text-xl font-semibold mb-2">Prédiction la plus fiable</h3>
+            <p>{predictions.mostConfidentPrediction.type}: {predictions.mostConfidentPrediction.prediction}</p>
+            <p>Fiabilité: {predictions.mostConfidentPrediction.reliability}%</p>
+          </div>
+        </div>
+      )}
+
+      <div className="flex space-x-4 mt-6">
+        <button
+          onClick={() => {
+            resetPrediction();
+            setStep('odds');
+          }}
+          className="custom-button flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        >
+          Obtenir une nouvelle prédiction
+        </button>
+        <button
+          onClick={() => {
+            resetPrediction();
+            setCurrentMode('home');
+          }}
+          className="custom-button flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+        >
+          Menu d'accueil
+        </button>
+      </div>
+    </motion.div>
+  );
+
+  useEffect(() => {
+  }, []);
+
+  return (
+    <div className={`app-container ${currentMode === 'hot' ? 'hot' : ''}`}>
+      {currentMode === 'home' && renderWelcomePage()}
+      {(currentMode === 'classiques' || currentMode === 'hot') && (
+        <div className="content-wrapper">
+          {step === 'odds' && renderOddsInput()}
+          {step === 'exactScores' && renderExactScoresInput()}
+          {step === 'predictions' && (
+            <>
+              {showAnimation && renderLoadingAnimation()}
+              {!showAnimation && renderPredictions()}
+            </>
+          )}
+        </div>
+      )}
+      <footer>
+        <p className="font-bold">AL VE CAPITAL</p>
+        <p>© 2024 Tous droits réservés</p>
+      </footer>
+    </div>
+  );
+};
+
+ReactDOM.render(<FifaPredictPro />, document.getElementById('root'));
+</script>
+</body></html>
